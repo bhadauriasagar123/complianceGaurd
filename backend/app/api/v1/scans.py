@@ -1,11 +1,8 @@
 """Scan and target API routes."""
 
 import asyncio
-import logging
 from typing import Annotated
 from uuid import UUID
-
-logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from sqlalchemy.exc import OperationalError
@@ -25,10 +22,15 @@ from app.schemas.scan import (
     ScanResponse,
 )
 from app.core.config import get_settings
+from app.core.logging import get_logger
 from app.services.scan_service import ScanService
 from app.services.target_validation import TargetValidator
+from app.workers.mock_orchestrator import orchestrate_scan_mock
 from app.workers.queue import enqueue_scan
-from app.workers.tasks import _orchestrate_scan
+from app.workers.scan_failures import mark_scan_failed
+
+logger = get_logger(__name__)
+MOCK_SCAN_TIMEOUT_SECONDS = 90.0
 
 router = APIRouter(tags=["Scans"])
 
@@ -115,14 +117,13 @@ async def create_scan(
             consent_confirmed=body.consent_confirmed,
             ip_address=request.client.host if request.client else None,
         )
-        await db.commit()
         scan_id = str(scan.id)
 
-        # Mock scans run inline so they finish on Render/Vercel (BackgroundTasks often never run on free hosting)
+        # Mock scans run inline on the request DB session (Render free tier has no background workers)
         if get_settings().use_scan_mock:
             try:
                 await asyncio.wait_for(
-                    _orchestrate_scan(scan_id),
+                    orchestrate_scan_mock(db, scan_id),
                     timeout=MOCK_SCAN_TIMEOUT_SECONDS,
                 )
             except TimeoutError:
@@ -132,12 +133,11 @@ async def create_scan(
                     "Scan timed out on the server. Cancel and start one scan at a time.",
                 )
             except Exception as exc:
-                logger.exception("mock_scan_failed", scan_id=scan_id)
+                logger.exception("mock_scan_failed", scan_id=scan_id, error=str(exc))
                 await mark_scan_failed(scan_id, str(exc))
-            refreshed = await service.get_scan(scan.id, current_user.organization_id)
-            if refreshed:
-                scan = refreshed
+            await db.refresh(scan)
         else:
+            await db.commit()
             enqueue_scan(scan_id, background_tasks)
 
         return ScanResponse.model_validate(scan)

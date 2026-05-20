@@ -1,14 +1,13 @@
 """Scan job enqueue with Celery fallback for local dev without Redis."""
 
 import asyncio
-import logging
-
 from fastapi import BackgroundTasks
 
 from app.core.config import get_settings
+from app.core.logging import get_logger
 from app.workers.tasks import _orchestrate_scan, orchestrate_scan
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 async def _run_orchestration_inline(scan_id: str) -> None:
@@ -30,7 +29,7 @@ def enqueue_scan(scan_id: str, background_tasks: BackgroundTasks) -> str:
     """
     settings = get_settings()
 
-    if settings.use_scan_mock or settings.app_env == "development":
+    if settings.use_scan_mock:
         background_tasks.add_task(_run_orchestration_inline, scan_id)
         return "background"
 

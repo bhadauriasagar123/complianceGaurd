@@ -4,19 +4,15 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import build_async_engine
-from app.core.config import get_settings
+from app.core.database import async_session_factory
 from app.domain.enums import ScanStatus
 from app.models.scan import Scan, ScanJob
 
-_engine = build_async_engine(get_settings())
-Session = async_sessionmaker(_engine, class_=AsyncSession, expire_on_commit=False)
-
 
 async def mark_scan_failed(scan_id: str, error_message: str) -> None:
-    async with Session() as db:
+    async with async_session_factory() as db:
         result = await db.execute(select(Scan).where(Scan.id == UUID(scan_id)))
         scan = result.scalar_one_or_none()
         if not scan:

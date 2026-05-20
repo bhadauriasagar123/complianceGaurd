@@ -5,10 +5,9 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import get_settings
-from app.core.database import build_async_engine
+from app.core.database import async_session_factory as SyncSession
 from app.domain.enums import AuditAction, ScanStatus
 from app.models.finding import Finding
 from app.models.scan import Scan, ScanJob
@@ -18,10 +17,6 @@ from app.services.compliance_engine import ComplianceEngine
 from app.services.findings_engine import FindingsEngine
 from app.workers.celery_app import celery_app
 from app.workers.mock_orchestrator import orchestrate_scan_mock
-
-settings = get_settings()
-sync_engine = build_async_engine(settings)
-SyncSession = async_sessionmaker(sync_engine, class_=AsyncSession, expire_on_commit=False)
 
 
 def run_async(coro):

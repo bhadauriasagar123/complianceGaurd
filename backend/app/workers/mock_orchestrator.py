@@ -1,7 +1,6 @@
 """Mock scan pipeline with real HTTP probes and demo-catalog findings."""
 
 import asyncio
-import logging
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -9,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
+from app.core.logging import get_logger
 from app.domain.enums import AuditAction, ScanStatus
 from app.models.finding import Finding
 from app.models.scan import Scan, ScanJob
@@ -19,7 +19,7 @@ from app.services.compliance_engine import ComplianceEngine
 from app.services.demo_findings import get_demo_findings_for_target
 from app.services.findings_engine import FindingsEngine
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Render free tier kills long requests; keep probe under this limit
 HTTP_PROBE_TIMEOUT_SECONDS = 12.0
@@ -197,10 +197,10 @@ async def orchestrate_scan_mock(db: AsyncSession, scan_id: str) -> dict:
             "mock_pipeline": True,
         }
     except Exception as exc:
-        logger.exception("mock_orchestration_failed", scan_id=scan_id)
+        logger.exception("mock_orchestration_failed", scan_id=scan_id, error=str(exc))
         scan.status = ScanStatus.FAILED
         scan.error_message = str(exc)[:1000]
         scan.completed_at = datetime.now(UTC)
         scan.current_phase = "failed"
         await db.commit()
-        raise
+        return {"scan_id": scan_id, "error": str(exc)[:500]}
