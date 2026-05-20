@@ -100,7 +100,13 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins_list(self) -> list[str]:
-        return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        origins: list[str] = []
+        for raw in (self.cors_origins, self.app_url):
+            for part in raw.split(","):
+                origin = part.strip().rstrip("/")
+                if origin and origin not in origins:
+                    origins.append(origin)
+        return origins
 
     @property
     def is_production(self) -> bool:

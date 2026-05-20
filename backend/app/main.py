@@ -56,14 +56,18 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(RequestIDMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(CSRFMiddleware)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.cors_origins_list,
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-CSRF-Token", "X-Request-ID"],
-    max_age=600,
-)
+_cors_kwargs: dict = {
+    "allow_origins": settings.cors_origins_list,
+    "allow_credentials": True,
+    "allow_methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    "allow_headers": ["Authorization", "Content-Type", "X-CSRF-Token", "X-Request-ID"],
+    "max_age": 600,
+}
+# Allow Vercel production + preview URLs when hosting frontend on Vercel
+if settings.is_production:
+    _cors_kwargs["allow_origin_regex"] = r"https://[\w-]+\.vercel\.app"
+
+app.add_middleware(CORSMiddleware, **_cors_kwargs)
 
 app.include_router(api_router)
 
