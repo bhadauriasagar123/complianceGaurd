@@ -5,9 +5,10 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.config import get_settings
+from app.core.database import build_async_engine
 from app.domain.enums import AuditAction, ScanStatus
 from app.models.finding import Finding
 from app.models.scan import Scan, ScanJob
@@ -18,10 +19,7 @@ from app.services.findings_engine import FindingsEngine
 from app.workers.celery_app import celery_app
 
 settings = get_settings()
-_worker_engine_kwargs: dict = {}
-if settings.is_sqlite:
-    _worker_engine_kwargs["connect_args"] = {"timeout": 30}
-sync_engine = create_async_engine(settings.database_url, **_worker_engine_kwargs)
+sync_engine = build_async_engine(settings)
 SyncSession = async_sessionmaker(sync_engine, class_=AsyncSession, expire_on_commit=False)
 
 
