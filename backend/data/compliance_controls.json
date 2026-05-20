@@ -1,0 +1,45 @@
+{
+  "frameworks": {
+    "hipaa": {
+      "name": "HIPAA Security Rule",
+      "controls": [
+        {"id": "164.308(a)(1)", "title": "Security Management Process", "category": "administrative"},
+        {"id": "164.312(a)(1)", "title": "Access Control", "category": "technical"},
+        {"id": "164.312(d)", "title": "Person or Entity Authentication", "category": "technical"},
+        {"id": "164.312(e)(1)", "title": "Transmission Security", "category": "technical"},
+        {"id": "164.312(e)(2)(ii)", "title": "Encryption", "category": "technical"}
+      ]
+    },
+    "gdpr": {
+      "name": "General Data Protection Regulation",
+      "controls": [
+        {"id": "Art. 25", "title": "Data Protection by Design", "category": "organizational"},
+        {"id": "Art. 32", "title": "Security of Processing", "category": "technical"},
+        {"id": "Art. 33", "title": "Breach Notification", "category": "organizational"}
+      ]
+    },
+    "pci_dss": {
+      "name": "PCI Data Security Standard",
+      "controls": [
+        {"id": "2.2", "title": "System Configuration Standards", "category": "technical"},
+        {"id": "4.1", "title": "Strong Cryptography for Transmission", "category": "technical"},
+        {"id": "6.1", "title": "Security Vulnerability Identification", "category": "process"},
+        {"id": "6.2", "title": "System Components Patching", "category": "process"},
+        {"id": "6.5", "title": "Address Common Coding Vulnerabilities", "category": "development"},
+        {"id": "7.1", "title": "Access Control Systems", "category": "technical"},
+        {"id": "8.3", "title": "Multi-Factor Authentication", "category": "technical"}
+      ]
+    },
+    "owasp_top_10": {
+      "name": "OWASP Top 10 2021",
+      "controls": [
+        {"id": "A01:2021", "title": "Broken Access Control", "category": "application"},
+        {"id": "A02:2021", "title": "Cryptographic Failures", "category": "application"},
+        {"id": "A03:2021", "title": "Injection", "category": "application"},
+        {"id": "A05:2021", "title": "Security Misconfiguration", "category": "application"},
+        {"id": "A06:2021", "title": "Vulnerable and Outdated Components", "category": "application"},
+        {"id": "A07:2021", "title": "Identification and Authentication Failures", "category": "application"}
+      ]
+    }
+  }
+}

@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: complianceguard-worker
+  namespace: complianceguard
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: complianceguard-worker
+  template:
+    metadata:
+      labels:
+        app: complianceguard-worker
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: worker
+          image: complianceguard/worker:latest
+          envFrom:
+            - secretRef:
+                name: complianceguard-secrets
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+              add: ["NET_RAW"]

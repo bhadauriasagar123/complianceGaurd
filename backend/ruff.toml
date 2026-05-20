@@ -1,0 +1,12 @@
+line-length = 120
+target-version = "py312"
+
+[lint]
+select = ["E", "F", "I", "N", "W", "B", "UP"]
+ignore = ["E501"]
+
+[lint.per-file-ignores]
+"tests/**/*.py" = ["S101", "S105", "S106", "S108", "E402"]
+"tests/conftest.py" = ["E402"]
+"app/scanners/**/*.py" = ["S108", "S603", "S607"]
+"app/main.py" = ["S104"]

@@ -1,0 +1,64 @@
+# Environment
+.env
+.env.local
+.env.*.local
+frontend/.env
+backend/.env
+
+# Local SQLite dev database
+backend/dev.db
+backend/dev.db-*
+*.db-journal
+*.pem
+*.key
+secrets/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+.vite/
+*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.log
+
+# Scan artifacts
+scans/output/
+reports/tmp/
+uploads/
+
+# SBOM
+sbom/*.json
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
