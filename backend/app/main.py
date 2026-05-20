@@ -113,9 +113,18 @@ async def metrics() -> Response:
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    from sqlalchemy.exc import OperationalError
+    from sqlalchemy.exc import OperationalError, ProgrammingError
 
     logger.error("unhandled_exception", error=str(exc), path=request.url.path)
+    if isinstance(exc, ProgrammingError):
+        response = JSONResponse(
+            status_code=500,
+            content={
+                "detail": "Database schema error. Redeploy the API (runs alembic migrations) or reset Neon DB.",
+            },
+        )
+        apply_cors_headers(request, response)
+        return response
     if isinstance(exc, OperationalError) and "locked" in str(exc).lower():
         response = JSONResponse(
             status_code=503,
