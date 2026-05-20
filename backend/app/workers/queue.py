@@ -30,7 +30,7 @@ def enqueue_scan(scan_id: str, background_tasks: BackgroundTasks) -> str:
     """
     settings = get_settings()
 
-    if settings.app_env == "development" or settings.scan_dev_mock:
+    if settings.use_scan_mock or settings.app_env == "development":
         background_tasks.add_task(_run_orchestration_inline, scan_id)
         return "background"
 

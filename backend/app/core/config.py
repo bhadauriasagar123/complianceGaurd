@@ -88,6 +88,9 @@ class Settings(BaseSettings):
     report_storage_path: str = "/app/reports"
     report_retention_days: int = 90
 
+    # Free-tier / demo hosting: run scans without Redis, Celery, or scanner binaries
+    scan_mock_mode: bool = False
+
     @field_validator("app_debug")
     @classmethod
     def disable_debug_in_production(cls, v: bool, info) -> bool:
@@ -111,6 +114,11 @@ class Settings(BaseSettings):
     def scan_dev_mock(self) -> bool:
         """Fast in-process scan path for local SQLite (avoids long DB locks)."""
         return self.app_env == "development" and self.is_sqlite
+
+    @property
+    def use_scan_mock(self) -> bool:
+        """Use lightweight mock scan pipeline (no Nmap/Nuclei/ZAP/Redis required)."""
+        return self.scan_mock_mode or self.scan_dev_mock
 
     @property
     def allowed_upload_mimes_list(self) -> list[str]:

@@ -13,11 +13,18 @@ _engine_kwargs: dict = {"echo": settings.app_debug}
 if settings.database_url.startswith("sqlite"):
     _engine_kwargs["connect_args"] = {"timeout": 30}
 else:
+    pool_size = settings.database_pool_size
+    max_overflow = settings.database_max_overflow
+    if settings.is_production:
+        pool_size = min(pool_size, 5)
+        max_overflow = min(max_overflow, 2)
     _engine_kwargs.update(
-        pool_size=settings.database_pool_size,
-        max_overflow=settings.database_max_overflow,
+        pool_size=pool_size,
+        max_overflow=max_overflow,
         pool_pre_ping=True,
     )
+    if "neon.tech" in settings.database_url or "sslmode=require" in settings.database_url.lower():
+        _engine_kwargs["connect_args"] = {"ssl": True}
 
 engine = create_async_engine(settings.database_url, **_engine_kwargs)
 

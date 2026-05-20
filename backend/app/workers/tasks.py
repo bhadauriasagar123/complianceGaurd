@@ -82,7 +82,7 @@ async def _orchestrate_scan_dev_mock(scan_id: str) -> dict:
 
 
 async def _orchestrate_scan(scan_id: str) -> dict:
-    if get_settings().scan_dev_mock:
+    if get_settings().use_scan_mock:
         return await _orchestrate_scan_dev_mock(scan_id)
 
     async with SyncSession() as db:

@@ -130,6 +130,20 @@ powershell -ExecutionPolicy Bypass -File frontend\run-dev.ps1
 
 ---
 
+## Deploy online for free (production)
+
+Host on **Vercel + Render + Neon** at **$0/month** (mock scans, no paid APIs required).
+
+**Step-by-step guide:** [docs/DEPLOY_FREE.md](docs/DEPLOY_FREE.md)
+
+Summary:
+
+1. [Neon](https://neon.tech) — free PostgreSQL → `DATABASE_URL`
+2. [Render](https://render.com) — deploy API from `render.yaml`, set `SCAN_MOCK_MODE=true`
+3. [Vercel](https://vercel.com) — deploy `frontend/` with `VITE_API_URL=https://your-api.onrender.com`
+
+---
+
 ## Quick Start (Docker — full stack)
 
 Use this for production-like scans with PostgreSQL, Redis, Celery, and scanner containers.
