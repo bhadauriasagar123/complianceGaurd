@@ -141,7 +141,11 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 | **CSRF / login fails** | Set `COOKIE_SECURE=true` and `COOKIE_SAMESITE=none`. Ensure `VITE_API_URL` points to Render. |
 | **API very slow first load** | Render free tier cold start — wait 60s and refresh. |
 | **Database connection error** | Use Neon **pooled** URL with `postgresql+asyncpg://` and `sslmode=require`. |
-| **500 after deploy** | Check Render **Logs** tab. Run migrations: start command includes `alembic upgrade head`. |
+| **`sslmode` / asyncpg error** | Deploy latest `main` (fix strips `sslmode` automatically). |
+| **`APP_ENV` validation error** | Set `APP_ENV` = `production` (not the literal text `APP_ENV`). |
+| **Exited with status 1 (no details)** | Set **Start Command** to `sh scripts/render_start.sh`, add env `PYTHON_VERSION` = `3.12.8`, redeploy. Read logs above the exit line. |
+| **alembic / relation already exists** | In Neon SQL editor: `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` then redeploy. |
+| **500 after deploy** | Check Render **Logs** tab after preflight lines. |
 | **Scans stuck pending** | Confirm `SCAN_MOCK_MODE=true` on Render. |
 
 ---

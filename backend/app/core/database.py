@@ -17,6 +17,9 @@ def prepare_asyncpg_url(database_url: str) -> tuple[str, dict]:
     Normalize PostgreSQL URLs for asyncpg.
     Strips sslmode from the URL and maps it to connect_args['ssl'].
     """
+    database_url = database_url.strip()
+    if database_url.startswith("postgresql://"):
+        database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
     if not database_url.startswith("postgresql"):
         return database_url, {}
 

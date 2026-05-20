@@ -25,6 +25,8 @@ services:
         value: none
       - key: PYTHON_VERSION
         value: "3.12.8"
+      - key: RENDER_PYTHON_VERSION
+        value: "3.12.8"
       - key: SECRET_KEY
         generateValue: true
       - key: FIELD_ENCRYPTION_KEY
