@@ -220,6 +220,28 @@ git push -u origin main --force
 
 Authenticate with GitHub via browser (Git Credential Manager) or a [personal access token](https://github.com/settings/tokens) when prompted.
 
+**CI workflow note:** The file `.github/workflows/ci.yml` exists locally but was excluded from the first push because GitHub requires the `workflow` scope on your PAT. To publish it:
+
+1. Create a token at [github.com/settings/tokens](https://github.com/settings/tokens) with **repo** and **workflow** scopes.
+2. Run:
+
+```powershell
+git add .github/workflows/ci.yml
+git commit -m "Add GitHub Actions CI workflow"
+git push
+```
+
+---
+
+## Clone after publish
+
+```powershell
+git clone https://github.com/bhadauriasagar123/complianceGaurd.git
+cd complianceGaurd
+```
+
+Then follow **Quick Start (Windows — no Docker)** above.
+
 ---
 
 ## Troubleshooting
