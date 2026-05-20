@@ -126,8 +126,13 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
         apply_cors_headers(request, response)
         return response
     detail = "Internal server error"
+    # Include error type in staging/production logs; brief hint in API for debugging deploys
+    if settings.app_env in ("development", "production", "staging"):
+        logger.exception("unhandled_exception_detail", error=str(exc))
     if settings.app_env == "development":
         detail = f"{type(exc).__name__}: {exc}"
+    elif settings.app_env == "production":
+        detail = f"Internal server error ({type(exc).__name__})"
     response = JSONResponse(status_code=500, content={"detail": detail})
     apply_cors_headers(request, response)
     return response

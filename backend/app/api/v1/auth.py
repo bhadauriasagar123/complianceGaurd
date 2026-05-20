@@ -88,12 +88,21 @@ async def register(
             full_name=user.full_name,
             is_verified=user.is_verified,
             mfa_enabled=user.mfa_enabled,
-            role=membership.role,
+            role=str(membership.role),
             organization_id=org.id,
             created_at=user.created_at,
         )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+    except Exception as exc:
+        from sqlalchemy.exc import IntegrityError
+
+        if isinstance(exc, IntegrityError):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email or organization already exists",
+            ) from exc
+        raise
 
 
 @router.post("/login", response_model=TokenResponse)

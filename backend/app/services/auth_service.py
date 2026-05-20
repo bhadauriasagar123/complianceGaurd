@@ -98,6 +98,9 @@ class AuthService:
             ip_address=ip_address,
             details={"email": email},
         )
+        # Load server defaults (created_at) before building API response
+        await self.db.refresh(user)
+        await self.db.refresh(org)
         return user, org
 
     async def login(
