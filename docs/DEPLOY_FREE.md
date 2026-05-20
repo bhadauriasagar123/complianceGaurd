@@ -117,10 +117,11 @@ sh scripts/render_start.sh
 
 1. Open your Vercel URL.
 2. **Register** a new account (data is stored in Neon).
-3. **Scans → Add target** → e.g. `https://example.com`.
+3. **Scans → Add target** → e.g. `https://testphp.vulnweb.com` (public practice site) or your own URL.
 4. **New scan** → confirm consent → start.
+5. Open **Findings** and select the completed scan.
 
-Scans run in **mock mode** (`SCAN_MOCK_MODE=true`): they complete without external scanner tools.
+Scans on Render use **mock mode** (`SCAN_MOCK_MODE=true`) with a **real HTTP security probe** (missing headers, cookies, server banners) plus extra **demo findings** for known practice hosts. See [SCANNING.md](./SCANNING.md) for Docker full scanning (Nmap/Nuclei/ZAP).
 
 ---
 
@@ -147,7 +148,8 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 | **Exited with status 1 (no details)** | Set **Start Command** to `sh scripts/render_start.sh`, add env `PYTHON_VERSION` = `3.12.8`, redeploy. Read logs above the exit line. |
 | **alembic / relation already exists** | In Neon SQL editor: `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` then redeploy. |
 | **500 after deploy** | Check Render **Logs** tab after preflight lines. |
-| **Scans stuck pending** | Confirm `SCAN_MOCK_MODE=true` on Render. |
+| **Scans stuck pending** | Confirm `SCAN_MOCK_MODE=true` on Render. Deploy latest `main`. |
+| **No findings after scan** | Set `SCAN_MOCK_HTTP_PROBE=true`. Use a public `https://` URL (not localhost). Try `https://testphp.vulnweb.com`. Check **Findings** page. |
 
 ---
 

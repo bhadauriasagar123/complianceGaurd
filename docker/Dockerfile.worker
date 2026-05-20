@@ -11,8 +11,17 @@ RUN groupadd -r complianceguard && useradd -r -g complianceguard -d /app -s /sbi
 
 WORKDIR /app
 
+ARG NUCLEI_VERSION=3.3.7
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libpq5 nmap && rm -rf /var/lib/apt/lists/*
+    libpq5 nmap curl unzip ca-certificates \
+    && curl -sL "https://github.com/projectdiscovery/nuclei/releases/download/v${NUCLEI_VERSION}/nuclei_${NUCLEI_VERSION}_linux_amd64.zip" -o /tmp/nuclei.zip \
+    && unzip -o /tmp/nuclei.zip nuclei -d /usr/local/bin \
+    && chmod +x /usr/local/bin/nuclei \
+    && rm -rf /var/lib/apt/lists/* /tmp/nuclei.zip
+
+USER complianceguard
+RUN nuclei -update-templates -silent || true
+USER root
 
 COPY --from=builder /root/.local /home/complianceguard/.local
 COPY backend/ .

@@ -137,6 +137,7 @@ Host on **Vercel + Render + Neon** at **$0/month** (mock scans, no paid APIs req
 **Step-by-step guides:**
 
 - [docs/DEPLOY_FREE.md](docs/DEPLOY_FREE.md) — Render API + Vercel UI + Neon DB ($0)
+- [docs/SCANNING.md](docs/SCANNING.md) — HTTP probe + demo targets; Docker Nmap/Nuclei/ZAP
 - [docs/DEPLOY_RAILWAY.md](docs/DEPLOY_RAILWAY.md) — Railway API + Vercel UI (trial credits)
 
 Summary (Render path):

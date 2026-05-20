@@ -1,0 +1,84 @@
+{
+  "host_groups": [
+    {
+      "patterns": ["testphp.vulnweb.com", "vulnweb.com"],
+      "findings": [
+        {
+          "category": "injection",
+          "severity": "high",
+          "title": "SQL injection practice surface (Acunetix test site)",
+          "description": "Public demo site is designed with SQL injection vectors in login and search parameters.",
+          "remediation": "Use parameterized queries; never concatenate user input into SQL.",
+          "cwe": "CWE-89",
+          "references": ["https://www.acunetix.com/websitesecurity/sql-injection/"]
+        },
+        {
+          "category": "xss",
+          "severity": "high",
+          "title": "Reflected/stored XSS practice surface",
+          "description": "Demo endpoints accept unsanitized input suitable for XSS testing in authorized labs only.",
+          "remediation": "Encode output contextually; deploy CSP; sanitize input.",
+          "cwe": "CWE-79"
+        },
+        {
+          "category": "authentication",
+          "severity": "medium",
+          "title": "Weak session handling (demo)",
+          "description": "Test applications often ship predictable session identifiers for training.",
+          "remediation": "Rotate session IDs on login; mark cookies Secure and HttpOnly.",
+          "cwe": "CWE-384"
+        }
+      ]
+    },
+    {
+      "patterns": ["juice-shop", "owasp-juice", "demo.owasp-juice.shop"],
+      "findings": [
+        {
+          "category": "broken_access_control",
+          "severity": "high",
+          "title": "OWASP Juice Shop — broken access control challenges",
+          "description": "Intentionally vulnerable SPA includes IDOR and privilege escalation training scenarios.",
+          "remediation": "Enforce server-side authorization on every object reference.",
+          "cwe": "CWE-639"
+        },
+        {
+          "category": "injection",
+          "severity": "critical",
+          "title": "OWASP Juice Shop — NoSQL / injection challenges",
+          "description": "Juice Shop includes API injection flaws for security education.",
+          "remediation": "Validate and parameterize all API inputs; use ODM/query builders safely.",
+          "cwe": "CWE-943"
+        },
+        {
+          "category": "cryptographic_failures",
+          "severity": "medium",
+          "title": "OWASP Juice Shop — sensitive data exposure",
+          "description": "Training app exposes secrets and weak crypto patterns by design.",
+          "remediation": "Encrypt sensitive data at rest; never embed secrets in client bundles.",
+          "cwe": "CWE-312"
+        }
+      ]
+    },
+    {
+      "patterns": ["zero.webappsecurity.com", "webappsecurity.com"],
+      "findings": [
+        {
+          "category": "access_control",
+          "severity": "medium",
+          "title": "Insecure Direct Object Reference (demo banking app)",
+          "description": "Practice banking application includes predictable account identifiers for IDOR labs.",
+          "remediation": "Bind object access to authenticated user context server-side.",
+          "cwe": "CWE-639"
+        },
+        {
+          "category": "security_misconfiguration",
+          "severity": "low",
+          "title": "Verbose error messages (demo)",
+          "description": "Training apps may leak stack traces to aid learning.",
+          "remediation": "Return generic errors to clients; log details server-side only.",
+          "cwe": "CWE-209"
+        }
+      ]
+    }
+  ]
+}

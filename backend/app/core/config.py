@@ -90,6 +90,8 @@ class Settings(BaseSettings):
 
     # Free-tier / demo hosting: run scans without Redis, Celery, or scanner binaries
     scan_mock_mode: bool = False
+    # When mock mode is on, run passive HTTP header/cookie checks against the target URL
+    scan_mock_http_probe: bool = True
 
     @field_validator("app_debug")
     @classmethod

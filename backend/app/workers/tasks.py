@@ -17,6 +17,7 @@ from app.services.audit_service import AuditService
 from app.services.compliance_engine import ComplianceEngine
 from app.services.findings_engine import FindingsEngine
 from app.workers.celery_app import celery_app
+from app.workers.mock_orchestrator import orchestrate_scan_mock
 
 settings = get_settings()
 sync_engine = build_async_engine(settings)
@@ -37,46 +38,9 @@ def orchestrate_scan(self, scan_id: str) -> dict:
 
 
 async def _orchestrate_scan_dev_mock(scan_id: str) -> dict:
-    """Lightweight scan completion for local dev (no external scanners, minimal DB time)."""
+    """Passive HTTP probe + demo catalog (no Nmap/Nuclei/ZAP required)."""
     async with SyncSession() as db:
-        result = await db.execute(select(Scan).where(Scan.id == UUID(scan_id)))
-        scan = result.scalar_one_or_none()
-        if not scan:
-            return {"error": "Scan not found"}
-
-        audit = AuditService(db)
-        now = datetime.now(UTC)
-        scan.status = ScanStatus.COMPLETED
-        scan.started_at = now
-        scan.completed_at = now
-        scan.progress_percent = 100
-        scan.current_phase = "completed"
-        scan.compliance_score = 100.0
-
-        jobs_result = await db.execute(select(ScanJob).where(ScanJob.scan_id == scan.id))
-        for job in jobs_result.scalars().all():
-            job.status = ScanStatus.COMPLETED
-            job.started_at = now
-            job.completed_at = now
-            job.error_message = "Skipped in dev mode (scanner tools not required locally)"
-
-        await audit.log(
-            AuditAction.SCAN_STARTED,
-            organization_id=scan.organization_id,
-            user_id=scan.created_by_id,
-            resource_id=scan_id,
-            details={"dev_mock": True},
-        )
-        await db.commit()
-        await audit.log(
-            AuditAction.SCAN_COMPLETED,
-            organization_id=scan.organization_id,
-            user_id=scan.created_by_id,
-            resource_id=scan_id,
-            details={"dev_mock": True, "findings_count": 0},
-        )
-        await db.commit()
-        return {"scan_id": scan_id, "findings": 0, "score": scan.compliance_score, "dev_mock": True}
+        return await orchestrate_scan_mock(db, scan_id)
 
 
 async def _orchestrate_scan(scan_id: str) -> dict:
