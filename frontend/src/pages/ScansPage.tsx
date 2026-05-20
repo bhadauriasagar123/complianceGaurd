@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -72,7 +72,7 @@ export function ScansPage() {
     queryFn: scansApi.listTargets,
   });
 
-  const { progress } = useScanWebSocket({
+  const { progress, connected: wsConnected, error: wsError } = useScanWebSocket({
     scanId: activeWsScanId,
     token: accessToken,
     enabled: !!activeWsScanId && !!accessToken,
@@ -81,6 +81,26 @@ export function ScansPage() {
       setActiveWsScanId(null);
     },
   });
+
+  const { data: polledScan } = useQuery({
+    queryKey: ["scan", activeWsScanId],
+    queryFn: () => scansApi.getScan(activeWsScanId!),
+    enabled: !!activeWsScanId,
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      if (status && ["completed", "failed", "cancelled"].includes(status)) {
+        return false;
+      }
+      return 3000;
+    },
+  });
+
+  useEffect(() => {
+    if (polledScan && ["completed", "failed", "cancelled"].includes(polledScan.status)) {
+      queryClient.invalidateQueries({ queryKey: ["scans"] });
+      setActiveWsScanId(null);
+    }
+  }, [polledScan, queryClient]);
 
   const {
     register,
@@ -106,7 +126,11 @@ export function ScansPage() {
       queryClient.invalidateQueries({ queryKey: ["scans"] });
       setModalOpen(false);
       reset();
-      setActiveWsScanId(scan.id);
+      if (["completed", "failed", "cancelled"].includes(scan.status)) {
+        setActiveWsScanId(null);
+      } else {
+        setActiveWsScanId(scan.id);
+      }
     },
     onError: (err) => setFormError(getApiErrorMessage(err)),
   });
@@ -135,7 +159,17 @@ export function ScansPage() {
   };
 
   const scans = scansData?.items ?? [];
-  const liveProgress = progress;
+  const liveProgress = useMemo(() => {
+    if (progress) return progress;
+    if (!polledScan || !activeWsScanId) return null;
+    return {
+      scan_id: polledScan.id,
+      status: polledScan.status,
+      progress_percent: polledScan.progress_percent,
+      current_phase: polledScan.current_phase,
+      compliance_score: polledScan.compliance_score,
+    };
+  }, [progress, polledScan, activeWsScanId]);
 
   return (
     <div className="space-y-6">
@@ -207,22 +241,32 @@ export function ScansPage() {
         </CardContent>
       </Card>
 
-      {liveProgress && (
+      {activeWsScanId && (
         <Card className="border-cyan-500/30 bg-cyan-500/5">
           <CardContent className="p-4">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-medium">Live scan progress</p>
                 <p className="text-xs text-muted-foreground">
-                  {liveProgress.current_phase ?? liveProgress.status} — {liveProgress.progress_percent}%
+                  {liveProgress
+                    ? `${liveProgress.current_phase ?? liveProgress.status} — ${liveProgress.progress_percent}%`
+                    : "Starting scan…"}
+                  {liveProgress && !wsConnected && ["pending", "running", "queued"].includes(liveProgress.status) && (
+                    <span className="block text-amber-400/90">
+                      Processing… (updates every few seconds)
+                    </span>
+                  )}
+                  {wsError && (
+                    <span className="block text-muted-foreground">Using API polling (WebSocket unavailable)</span>
+                  )}
                 </p>
               </div>
               <div className="h-2 flex-1 max-w-xs rounded-full bg-muted overflow-hidden">
                 <div
                   className="h-full bg-cyan-500 transition-all duration-500"
-                  style={{ width: `${liveProgress.progress_percent}%` }}
+                  style={{ width: `${liveProgress?.progress_percent ?? 0}%` }}
                   role="progressbar"
-                  aria-valuenow={liveProgress.progress_percent}
+                  aria-valuenow={liveProgress?.progress_percent ?? 0}
                   aria-valuemin={0}
                   aria-valuemax={100}
                 />

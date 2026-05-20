@@ -20,9 +20,11 @@ from app.schemas.scan import (
     ScanListResponse,
     ScanResponse,
 )
+from app.core.config import get_settings
 from app.services.scan_service import ScanService
 from app.services.target_validation import TargetValidator
 from app.workers.queue import enqueue_scan
+from app.workers.tasks import _orchestrate_scan
 
 router = APIRouter(tags=["Scans"])
 
@@ -109,9 +111,19 @@ async def create_scan(
             consent_confirmed=body.consent_confirmed,
             ip_address=request.client.host if request.client else None,
         )
-        response = ScanResponse.model_validate(scan)
-        enqueue_scan(str(scan.id), background_tasks)
-        return response
+        await db.commit()
+        scan_id = str(scan.id)
+
+        # Mock scans run inline so they finish on Render/Vercel (BackgroundTasks often never run on free hosting)
+        if get_settings().use_scan_mock:
+            await _orchestrate_scan(scan_id)
+            refreshed = await service.get_scan(scan.id, current_user.organization_id)
+            if refreshed:
+                scan = refreshed
+        else:
+            enqueue_scan(scan_id, background_tasks)
+
+        return ScanResponse.model_validate(scan)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
     except OperationalError as exc:
