@@ -60,6 +60,21 @@ CSRF_COOKIE_NAME = "cg_csrf_token"
 CSRF_HEADER_NAME = "X-CSRF-Token"
 
 
+def issue_csrf_token(response: Response) -> str:
+    """Set CSRF cookie on response and return the token (for SPA cross-origin clients)."""
+    token = secrets.token_urlsafe(32)
+    settings = get_settings()
+    response.set_cookie(
+        CSRF_COOKIE_NAME,
+        token,
+        httponly=False,
+        secure=settings.cookie_secure,
+        samesite=settings.cookie_samesite,
+        path="/",
+    )
+    return token
+
+
 class CSRFMiddleware(BaseHTTPMiddleware):
     SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
@@ -70,19 +85,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         if request.method in self.SAFE_METHODS:
-            response = await call_next(request)
-            if CSRF_COOKIE_NAME not in request.cookies:
-                token = secrets.token_urlsafe(32)
-                settings = get_settings()
-                response.set_cookie(
-                    CSRF_COOKIE_NAME,
-                    token,
-                    httponly=False,
-                    secure=settings.cookie_secure,
-                    samesite=settings.cookie_samesite,
-                    path="/",
-                )
-            return response
+            return await call_next(request)
 
         cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
         header_token = request.headers.get(CSRF_HEADER_NAME)

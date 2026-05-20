@@ -138,6 +138,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 | Issue | Solution |
 |-------|----------|
 | **CORS error in browser** | `CORS_ORIGINS` on Render must exactly match the Vercel URL (https, no trailing slash). Redeploy API. |
+| **403 on register/login (CSRF)** | Deploy latest `main` (CSRF token via `/api/v1/auth/csrf`). Redeploy **Vercel** frontend too. Set `COOKIE_SECURE=true`, `COOKIE_SAMESITE=none`. |
 | **CSRF / login fails** | Set `COOKIE_SECURE=true` and `COOKIE_SAMESITE=none`. Ensure `VITE_API_URL` points to Render. |
 | **API very slow first load** | Render free tier cold start — wait 60s and refresh. |
 | **Database connection error** | Use Neon **pooled** URL with `postgresql+asyncpg://` and `sslmode=require`. |

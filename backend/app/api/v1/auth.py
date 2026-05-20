@@ -17,9 +17,17 @@ from app.schemas.auth import (
     TokenResponse,
     UserResponse,
 )
+from app.middleware.security import issue_csrf_token
 from app.services.auth_service import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+@router.get("/csrf")
+async def get_csrf_token(response: Response) -> dict[str, str]:
+    """Return CSRF token for SPA clients (Vercel → Render cross-origin)."""
+    token = issue_csrf_token(response)
+    return {"csrf_token": token}
 
 
 def _set_auth_cookies(response: Response, access_token: str, refresh_token: str) -> None:

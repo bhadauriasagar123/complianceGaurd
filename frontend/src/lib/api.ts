@@ -19,9 +19,22 @@ export const API_V1_BASE = API_BASE_URL ? `${API_BASE_URL}/api/v1` : "/api/v1";
 export const CSRF_COOKIE_NAME = "cg_csrf_token";
 export const CSRF_HEADER_NAME = "X-CSRF-Token";
 
+const CSRF_STORAGE_KEY = "cg_csrf_token";
+
 function getCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp(`(?:^|; )${name}=([^;]*)`));
   return match ? decodeURIComponent(match[1]) : null;
+}
+
+/** CSRF token: sessionStorage for cross-origin API (Vercel→Render), else cookie (dev proxy). */
+function getCsrfToken(): string | null {
+  try {
+    const stored = sessionStorage.getItem(CSRF_STORAGE_KEY);
+    if (stored) return stored;
+  } catch {
+    /* private mode */
+  }
+  return getCookie(CSRF_COOKIE_NAME);
 }
 
 export const apiClient = axios.create({
@@ -32,10 +45,23 @@ export const apiClient = axios.create({
   },
 });
 
-/** Prime CSRF cookie via proxied health check (dev) or direct API. */
+/** Prime CSRF token (cookie + sessionStorage for cross-origin production). */
 export async function ensureCsrfCookie(): Promise<void> {
-  const url = API_BASE_URL ? `${API_BASE_URL}/health` : "/health";
-  await fetch(url, { credentials: "include" });
+  const url = API_BASE_URL
+    ? `${API_BASE_URL}/api/v1/auth/csrf`
+    : "/api/v1/auth/csrf";
+  const res = await fetch(url, { credentials: "include" });
+  if (!res.ok) {
+    throw new Error(`CSRF bootstrap failed: ${res.status}`);
+  }
+  const data = (await res.json()) as { csrf_token?: string };
+  if (data.csrf_token) {
+    try {
+      sessionStorage.setItem(CSRF_STORAGE_KEY, data.csrf_token);
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
 apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
@@ -46,7 +72,7 @@ apiClient.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
   const method = (config.method ?? "get").toUpperCase();
   if (!["GET", "HEAD", "OPTIONS"].includes(method)) {
-    const csrf = getCookie(CSRF_COOKIE_NAME);
+    const csrf = getCsrfToken();
     if (csrf) {
       config.headers.set(CSRF_HEADER_NAME, csrf);
     }

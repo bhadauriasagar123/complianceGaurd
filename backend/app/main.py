@@ -2,7 +2,7 @@
 
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -16,7 +16,7 @@ from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.database import Base, engine
 from app.core.logging import configure_logging, get_logger
-from app.middleware.security import CSRFMiddleware, RequestIDMiddleware, SecurityHeadersMiddleware
+from app.middleware.security import CSRFMiddleware, RequestIDMiddleware, SecurityHeadersMiddleware, issue_csrf_token
 
 settings = get_settings()
 configure_logging(settings.log_level)
@@ -82,8 +82,14 @@ async def metrics_middleware(request: Request, call_next):
 
 
 @app.get("/health")
-async def health_check() -> dict:
-    return {"status": "healthy", "version": "1.0.0", "environment": settings.app_env}
+async def health_check(response: Response) -> dict:
+    csrf_token = issue_csrf_token(response)
+    return {
+        "status": "healthy",
+        "version": "1.0.0",
+        "environment": settings.app_env,
+        "csrf_token": csrf_token,
+    }
 
 
 @app.get("/metrics")
