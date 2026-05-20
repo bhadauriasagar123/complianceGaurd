@@ -16,6 +16,8 @@ from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.database import Base, engine
 from app.core.logging import configure_logging, get_logger
+from app.core.cors_utils import apply_cors_headers
+from app.middleware.cors_fallback import CorsFallbackMiddleware
 from app.middleware.security import CSRFMiddleware, RequestIDMiddleware, SecurityHeadersMiddleware, issue_csrf_token
 
 settings = get_settings()
@@ -30,7 +32,12 @@ limiter = Limiter(key_func=get_remote_address, default_limits=[f"{settings.rate_
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("starting_application", env=settings.app_env)
+    logger.info(
+        "starting_application",
+        env=settings.app_env,
+        cors_origins=settings.cors_origins_list,
+        app_url=settings.app_url,
+    )
     if settings.database_url.startswith("sqlite"):
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
@@ -63,11 +70,12 @@ _cors_kwargs: dict = {
     "allow_headers": ["Authorization", "Content-Type", "X-CSRF-Token", "X-Request-ID"],
     "max_age": 600,
 }
-# Allow Vercel production + preview URLs when hosting frontend on Vercel
-if settings.is_production:
-    _cors_kwargs["allow_origin_regex"] = r"https://[\w-]+\.vercel\.app"
+# Allow all Vercel app URLs (production + preview deployments)
+_cors_kwargs["allow_origin_regex"] = r"https://[\w-]+\.vercel\.app"
 
 app.add_middleware(CORSMiddleware, **_cors_kwargs)
+# Outermost: CORS on every response including 403/500 from inner middleware
+app.add_middleware(CorsFallbackMiddleware)
 
 app.include_router(api_router)
 
@@ -109,13 +117,17 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 
     logger.error("unhandled_exception", error=str(exc), path=request.url.path)
     if isinstance(exc, OperationalError) and "locked" in str(exc).lower():
-        return JSONResponse(
+        response = JSONResponse(
             status_code=503,
             content={
                 "detail": "Database busy. Retry in a moment, or restart the API server.",
             },
         )
+        apply_cors_headers(request, response)
+        return response
     detail = "Internal server error"
     if settings.app_env == "development":
         detail = f"{type(exc).__name__}: {exc}"
-    return JSONResponse(status_code=500, content={"detail": detail})
+    response = JSONResponse(status_code=500, content={"detail": detail})
+    apply_cors_headers(request, response)
+    return response

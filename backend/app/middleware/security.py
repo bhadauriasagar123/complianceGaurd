@@ -8,6 +8,7 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from app.core.config import get_settings
+from app.core.cors_utils import apply_cors_headers
 from app.core.logging import request_id_var
 
 
@@ -91,9 +92,21 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         header_token = request.headers.get(CSRF_HEADER_NAME)
 
         if not cookie_token or not header_token:
-            return Response(content='{"detail":"CSRF token missing"}', status_code=403, media_type="application/json")
+            resp = Response(
+                content='{"detail":"CSRF token missing"}',
+                status_code=403,
+                media_type="application/json",
+            )
+            apply_cors_headers(request, resp)
+            return resp
 
         if not secrets.compare_digest(cookie_token, header_token):
-            return Response(content='{"detail":"CSRF token invalid"}', status_code=403, media_type="application/json")
+            resp = Response(
+                content='{"detail":"CSRF token invalid"}',
+                status_code=403,
+                media_type="application/json",
+            )
+            apply_cors_headers(request, resp)
+            return resp
 
         return await call_next(request)
