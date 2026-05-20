@@ -134,13 +134,16 @@ powershell -ExecutionPolicy Bypass -File frontend\run-dev.ps1
 
 Host on **Vercel + Render + Neon** at **$0/month** (mock scans, no paid APIs required).
 
-**Step-by-step guide:** [docs/DEPLOY_FREE.md](docs/DEPLOY_FREE.md)
+**Step-by-step guides:**
 
-Summary:
+- [docs/DEPLOY_FREE.md](docs/DEPLOY_FREE.md) — Render API + Vercel UI + Neon DB ($0)
+- [docs/DEPLOY_RAILWAY.md](docs/DEPLOY_RAILWAY.md) — Railway API + Vercel UI (trial credits)
+
+Summary (Render path):
 
 1. [Neon](https://neon.tech) — free PostgreSQL → `DATABASE_URL`
-2. [Render](https://render.com) — deploy API from `render.yaml`, set `SCAN_MOCK_MODE=true`
-3. [Vercel](https://vercel.com) — deploy `frontend/` with `VITE_API_URL=https://your-api.onrender.com`
+2. [Render](https://render.com) or [Railway](https://railway.app) — deploy `backend/`, set `SCAN_MOCK_MODE=true`
+3. [Vercel](https://vercel.com) — deploy `frontend/` with `VITE_API_URL=https://your-api-url`
 
 ---
 

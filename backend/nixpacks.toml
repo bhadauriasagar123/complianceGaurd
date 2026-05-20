@@ -1,0 +1,6 @@
+# Pin Python for Railway Nixpacks builds
+[phases.setup]
+nixPkgs = ["python312"]
+
+[start]
+cmd = "sh scripts/railway_start.sh"
