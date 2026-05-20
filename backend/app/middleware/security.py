@@ -60,6 +60,17 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
 CSRF_COOKIE_NAME = "cg_csrf_token"
 CSRF_HEADER_NAME = "X-CSRF-Token"
 
+# Cross-origin SPAs (Vercel→Render): browsers block third-party cookies, so cookie+header
+# double-submit fails. JWT Bearer auth does not need CSRF; bootstrap auth routes are
+# protected by CORS origin allowlists.
+CSRF_EXEMPT_PATHS = frozenset(
+    {
+        "/api/v1/auth/register",
+        "/api/v1/auth/login",
+        "/api/v1/auth/refresh",
+    }
+)
+
 
 def issue_csrf_token(response: Response) -> str:
     """Set CSRF cookie on response and return the token (for SPA cross-origin clients)."""
@@ -79,6 +90,13 @@ def issue_csrf_token(response: Response) -> str:
 class CSRFMiddleware(BaseHTTPMiddleware):
     SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
+    @staticmethod
+    def _csrf_exempt(request: Request) -> bool:
+        if request.url.path in CSRF_EXEMPT_PATHS:
+            return True
+        auth = request.headers.get("Authorization", "")
+        return auth.startswith("Bearer ")
+
     async def dispatch(self, request: Request, call_next) -> Response:
         import os
 
@@ -86,6 +104,9 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         if request.method in self.SAFE_METHODS:
+            return await call_next(request)
+
+        if self._csrf_exempt(request):
             return await call_next(request)
 
         cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
