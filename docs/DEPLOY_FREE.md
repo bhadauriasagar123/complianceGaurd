@@ -149,6 +149,7 @@ python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().d
 | **alembic / relation already exists** | In Neon SQL editor: `DROP SCHEMA public CASCADE; CREATE SCHEMA public;` then redeploy. |
 | **500 after deploy** | Check Render **Logs** tab after preflight lines. |
 | **Scans stuck pending** | Confirm `SCAN_MOCK_MODE=true` on Render. Deploy latest `main`. |
+| **Scans stuck at Running 10%** | Cancel old scans. Deploy latest `main` (HTTP probe timeout fix). Start **one** scan at a time. |
 | **No findings after scan** | Set `SCAN_MOCK_HTTP_PROBE=true`. Use a public `https://` URL (not localhost). Try `https://testphp.vulnweb.com`. Check **Findings** page. |
 
 ---

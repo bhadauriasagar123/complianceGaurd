@@ -74,7 +74,9 @@ class HttpSecurityProbeAdapter(BaseScannerAdapter):
         try:
             async with httpx.AsyncClient(
                 follow_redirects=True,
-                timeout=httpx.Timeout(20.0, connect=10.0),
+                timeout=httpx.Timeout(8.0, connect=4.0),
+                limits=httpx.Limits(max_connections=2),
+                max_redirects=5,
                 headers={"User-Agent": "ComplianceGuard-SecurityProbe/1.0"},
             ) as client:
                 response = await client.get(target)

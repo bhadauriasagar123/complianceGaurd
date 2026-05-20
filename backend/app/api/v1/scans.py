@@ -1,7 +1,11 @@
 """Scan and target API routes."""
 
+import asyncio
+import logging
 from typing import Annotated
 from uuid import UUID
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from sqlalchemy.exc import OperationalError
@@ -116,7 +120,20 @@ async def create_scan(
 
         # Mock scans run inline so they finish on Render/Vercel (BackgroundTasks often never run on free hosting)
         if get_settings().use_scan_mock:
-            await _orchestrate_scan(scan_id)
+            try:
+                await asyncio.wait_for(
+                    _orchestrate_scan(scan_id),
+                    timeout=MOCK_SCAN_TIMEOUT_SECONDS,
+                )
+            except TimeoutError:
+                logger.error("mock_scan_timeout", scan_id=scan_id)
+                await mark_scan_failed(
+                    scan_id,
+                    "Scan timed out on the server. Cancel and start one scan at a time.",
+                )
+            except Exception as exc:
+                logger.exception("mock_scan_failed", scan_id=scan_id)
+                await mark_scan_failed(scan_id, str(exc))
             refreshed = await service.get_scan(scan.id, current_user.organization_id)
             if refreshed:
                 scan = refreshed
