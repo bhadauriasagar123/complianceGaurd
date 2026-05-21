@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Menu, LogOut, User, Bell, X } from "lucide-react";
+import { Menu, LogOut, User, Bell, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/authStore";
 import { authApi } from "@/api/auth";
@@ -66,8 +66,12 @@ export function Header({ onMenuToggle, mobileMenuOpen }: HeaderProps) {
           disabled={loggingOut}
           aria-label="Sign out"
         >
-          <LogOut className="h-4 w-4" />
-          <span className="hidden sm:inline">Sign out</span>
+          {loggingOut ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <LogOut className="h-4 w-4" />
+          )}
+          <span className="hidden sm:inline">{loggingOut ? "Signing out…" : "Sign out"}</span>
         </Button>
       </div>
     </header>

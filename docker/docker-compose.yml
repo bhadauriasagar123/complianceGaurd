@@ -35,6 +35,13 @@ services:
     env_file:
       - ../.env
     environment:
+      APP_ENV: production
+      APP_URL: http://localhost:5173
+      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
+      SCAN_MOCK_MODE: "false"
+      SCAN_MOCK_HTTP_PROBE: "true"
+      COOKIE_SECURE: "false"
+      COOKIE_SAMESITE: lax
       DATABASE_URL: postgresql+asyncpg://complianceguard:complianceguard@postgres:5432/complianceguard
       REDIS_URL: redis://:redis_secure_password@redis:6379/0
       CELERY_BROKER_URL: redis://:redis_secure_password@redis:6379/1
@@ -62,6 +69,9 @@ services:
     env_file:
       - ../.env
     environment:
+      APP_ENV: production
+      SCAN_MOCK_MODE: "false"
+      SCAN_MOCK_HTTP_PROBE: "true"
       DATABASE_URL: postgresql+asyncpg://complianceguard:complianceguard@postgres:5432/complianceguard
       CELERY_BROKER_URL: redis://:redis_secure_password@redis:6379/1
       CELERY_RESULT_BACKEND: redis://:redis_secure_password@redis:6379/2
@@ -116,6 +126,8 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.frontend
+      args:
+        VITE_API_URL: http://localhost:8000
     ports:
       - "5173:80"
     depends_on:
@@ -125,6 +137,8 @@ services:
 
   nginx:
     image: nginx:1.25-alpine
+    profiles:
+      - proxy
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     ports:

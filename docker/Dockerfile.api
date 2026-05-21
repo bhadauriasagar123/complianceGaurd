@@ -26,11 +26,15 @@ ENV PYTHONUNBUFFERED=1
 
 RUN mkdir -p /app/reports && chown -R complianceguard:complianceguard /app
 
+USER root
+COPY docker/docker-entrypoint-api.sh /docker-entrypoint-api.sh
+RUN chmod +x /docker-entrypoint-api.sh && chown complianceguard:complianceguard /docker-entrypoint-api.sh
+
 USER complianceguard
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=5 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]
+ENTRYPOINT ["/docker-entrypoint-api.sh"]

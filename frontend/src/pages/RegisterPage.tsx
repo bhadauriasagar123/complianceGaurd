@@ -8,6 +8,8 @@ import { ShieldCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { authApi } from "@/api/auth";
 import { getApiErrorMessage } from "@/lib/api";
 
@@ -43,6 +45,7 @@ export function RegisterPage() {
   });
 
   const onSubmit = async (data: RegisterForm) => {
+    if (isSubmitting) return;
     setError(null);
     try {
       await authApi.register(data);
@@ -65,21 +68,24 @@ export function RegisterPage() {
           <h1 className="text-2xl font-bold">Create your account</h1>
         </div>
 
-        <Card className="border-cyan-500/20">
+        <Card className="border-cyan-500/20 relative overflow-hidden">
+          <LoadingOverlay show={isSubmitting} label="Creating your account…" />
           <CardHeader>
             <CardTitle>Register</CardTitle>
             <CardDescription>Start securing your infrastructure today</CardDescription>
           </CardHeader>
           <CardContent>
             {success ? (
-              <div
-                className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400"
-                role="status"
-              >
-                Account created! Redirecting to sign in…
+              <div className="py-6">
+                <LoadingSpinner size="md" label="Account created! Redirecting to sign in…" />
               </div>
             ) : (
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+              <form
+                onSubmit={handleSubmit(onSubmit)}
+                className="space-y-4"
+                noValidate
+                aria-busy={isSubmitting}
+              >
                 {error && (
                   <div
                     className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"

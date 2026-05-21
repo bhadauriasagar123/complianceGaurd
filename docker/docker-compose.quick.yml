@@ -1,0 +1,13 @@
+# Quick local stack: HTTP probe + demo findings (no worker/ZAP/Nuclei build)
+services:
+  api:
+    environment:
+      APP_ENV: development
+      SCAN_MOCK_MODE: "true"
+      SCAN_MOCK_HTTP_PROBE: "true"
+      COOKIE_SECURE: "false"
+      COOKIE_SAMESITE: lax
+
+  frontend:
+    depends_on:
+      - api

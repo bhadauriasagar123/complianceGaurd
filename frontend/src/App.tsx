@@ -10,22 +10,14 @@ import { CompliancePage } from "@/pages/CompliancePage";
 import { AuditLogsPage } from "@/pages/AuditLogsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { useAuthStore } from "@/store/authStore";
-import { Skeleton } from "@/components/ui/skeleton";
+import { PageLoader } from "@/components/ui/page-loader";
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, user } = useAuthStore();
   const location = useLocation();
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="space-y-4 w-64">
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-        </div>
-      </div>
-    );
+    return <PageLoader message="Checking your session…" />;
   }
 
   if (!isAuthenticated && !user) {
@@ -39,11 +31,7 @@ function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user, isLoading } = useAuthStore();
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Skeleton className="h-8 w-48" />
-      </div>
-    );
+    return <PageLoader message="Loading…" />;
   }
 
   if (isAuthenticated || user) {

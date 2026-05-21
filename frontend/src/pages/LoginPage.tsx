@@ -8,6 +8,7 @@ import { ShieldCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { authApi } from "@/api/auth";
 import { useAuthStore } from "@/store/authStore";
 import { getApiErrorMessage } from "@/lib/api";
@@ -35,6 +36,7 @@ export function LoginPage() {
   });
 
   const onSubmit = async (data: LoginForm) => {
+    if (isSubmitting) return;
     setError(null);
     setLoading(true);
     try {
@@ -70,13 +72,19 @@ export function LoginPage() {
           <h1 className="text-2xl font-bold">Sign in to ComplianceGuard</h1>
         </div>
 
-        <Card className="glow-cyan border-cyan-500/20">
+        <Card className="glow-cyan border-cyan-500/20 relative overflow-hidden">
+          <LoadingOverlay show={isSubmitting} label="Signing in…" />
           <CardHeader>
             <CardTitle>Welcome back</CardTitle>
             <CardDescription>Enter your credentials to access the dashboard</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="space-y-4"
+              noValidate
+              aria-busy={isSubmitting}
+            >
               {error && (
                 <div
                   className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive"
@@ -93,6 +101,7 @@ export function LoginPage() {
                   id="email"
                   type="email"
                   autoComplete="email"
+                  disabled={isSubmitting}
                   {...register("email")}
                   error={errors.email?.message}
                 />
@@ -105,6 +114,7 @@ export function LoginPage() {
                   id="password"
                   type="password"
                   autoComplete="current-password"
+                  disabled={isSubmitting}
                   {...register("password")}
                   error={errors.password?.message}
                 />
@@ -120,6 +130,7 @@ export function LoginPage() {
                     inputMode="numeric"
                     maxLength={6}
                     autoComplete="one-time-code"
+                    disabled={isSubmitting}
                     {...register("mfa_code")}
                     error={errors.mfa_code?.message}
                   />

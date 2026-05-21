@@ -7,6 +7,7 @@ import { Loader2, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { scansApi } from "@/api/scans";
 import { getApiErrorMessage } from "@/lib/api";
 
@@ -37,7 +38,7 @@ export function AddTargetDialog({ open, onClose, onCreated }: AddTargetDialogPro
     register,
     handleSubmit,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<TargetForm>({
     resolver: zodResolver(targetSchema),
     defaultValues: {
@@ -59,7 +60,15 @@ export function AddTargetDialog({ open, onClose, onCreated }: AddTargetDialogPro
     onError: (err) => setError(getApiErrorMessage(err)),
   });
 
+  const isSaving = mutation.isPending;
+
+  const handleClose = () => {
+    if (isSaving) return;
+    onClose();
+  };
+
   const onSubmit = (data: TargetForm) => {
+    if (isSaving) return;
     setError(null);
     mutation.mutate({
       target_value: data.target_value,
@@ -75,14 +84,23 @@ export function AddTargetDialog({ open, onClose, onCreated }: AddTargetDialogPro
 
   return (
     <>
-      <div className="fixed inset-0 z-[60] bg-black/70" onClick={onClose} aria-hidden />
+      <div
+        className="fixed inset-0 z-[60] bg-black/70"
+        onClick={handleClose}
+        aria-hidden
+      />
       <div
         className="fixed inset-0 z-[60] flex items-center justify-center p-4"
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-target-title"
+        aria-busy={isSaving}
       >
-        <Card className="w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <Card
+          className="relative w-full max-w-md overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <LoadingOverlay show={isSaving} label="Adding target…" />
           <CardHeader className="flex flex-row items-start justify-between">
             <div>
               <CardTitle id="add-target-title">Add authorized target</CardTitle>
@@ -90,7 +108,13 @@ export function AddTargetDialog({ open, onClose, onCreated }: AddTargetDialogPro
                 Register a target you own before running scans. Localhost and private IPs are blocked.
               </CardDescription>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleClose}
+              disabled={isSaving}
+              aria-label="Close"
+            >
               <X className="h-4 w-4" />
             </Button>
           </CardHeader>
@@ -111,6 +135,7 @@ export function AddTargetDialog({ open, onClose, onCreated }: AddTargetDialogPro
                 <Input
                   id="target_value"
                   placeholder="https://example.com or api.example.com"
+                  disabled={isSaving}
                   {...register("target_value")}
                   error={errors.target_value?.message}
                 />
@@ -121,7 +146,8 @@ export function AddTargetDialog({ open, onClose, onCreated }: AddTargetDialogPro
                 </label>
                 <select
                   id="target_type"
-                  className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 text-sm"
+                  className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 text-sm disabled:opacity-50"
+                  disabled={isSaving}
                   {...register("target_type")}
                 >
                   <option value="url">URL</option>
@@ -136,7 +162,8 @@ export function AddTargetDialog({ open, onClose, onCreated }: AddTargetDialogPro
                 </label>
                 <select
                   id="verification_method"
-                  className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 text-sm"
+                  className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 text-sm disabled:opacity-50"
+                  disabled={isSaving}
                   {...register("verification_method")}
                 >
                   <option value="dns_txt_record">DNS TXT record</option>
@@ -152,13 +179,15 @@ export function AddTargetDialog({ open, onClose, onCreated }: AddTargetDialogPro
                 <Input
                   id="ownership_proof"
                   placeholder="e.g. TXT record value, ticket ID"
+                  disabled={isSaving}
                   {...register("ownership_proof")}
                 />
               </div>
               <label className="flex items-start gap-3 rounded-lg border border-border/50 p-4 cursor-pointer">
                 <input
                   type="checkbox"
-                  className="mt-1 h-4 w-4 rounded border-input"
+                  className="mt-1 h-4 w-4 rounded border-input disabled:opacity-50"
+                  disabled={isSaving}
                   {...register("consent_confirmed")}
                 />
                 <span className="text-sm">
@@ -169,11 +198,17 @@ export function AddTargetDialog({ open, onClose, onCreated }: AddTargetDialogPro
                 <p className="text-xs text-destructive">{errors.consent_confirmed.message}</p>
               )}
               <div className="flex gap-3 pt-2">
-                <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={handleClose}
+                  disabled={isSaving}
+                >
                   Cancel
                 </Button>
-                <Button type="submit" variant="cyber" className="flex-1" disabled={isSubmitting}>
-                  {isSubmitting ? (
+                <Button type="submit" variant="cyber" className="flex-1" disabled={isSaving}>
+                  {isSaving ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Saving…

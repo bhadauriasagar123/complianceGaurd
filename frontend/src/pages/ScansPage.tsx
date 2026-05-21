@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingOverlay } from "@/components/ui/loading-overlay";
 import { scansApi } from "@/api/scans";
 import { useAuthStore } from "@/store/authStore";
 import { useScanWebSocket } from "@/hooks/useScanWebSocket";
@@ -108,7 +109,7 @@ export function ScansPage() {
     watch,
     setValue,
     reset,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<CreateScanForm>({
     resolver: zodResolver(createScanSchema),
     defaultValues: {
@@ -148,7 +149,16 @@ export function ScansPage() {
     setValue("scanners_enabled", next, { shouldValidate: true });
   };
 
+  const isStartingScan = createMutation.isPending;
+
+  const closeScanModal = () => {
+    if (isStartingScan) return;
+    setModalOpen(false);
+    setFormError(null);
+  };
+
   const onSubmit = (data: CreateScanForm) => {
+    if (isStartingScan) return;
     setFormError(null);
     createMutation.mutate({
       authorized_target_id: data.authorized_target_id,
@@ -179,12 +189,17 @@ export function ScansPage() {
           <p className="text-muted-foreground">Manage and monitor security assessments</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setTargetDialogOpen(true)}>
+          <Button
+            variant="outline"
+            onClick={() => setTargetDialogOpen(true)}
+            disabled={isStartingScan}
+          >
             <Crosshair className="h-4 w-4" />
             Add target
           </Button>
           <Button
             variant="cyber"
+            disabled={isStartingScan}
             onClick={() => {
               refetchTargets();
               setModalOpen(true);
@@ -204,7 +219,12 @@ export function ScansPage() {
               Targets must be registered before you can scan them
             </CardDescription>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setTargetDialogOpen(true)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setTargetDialogOpen(true)}
+            disabled={isStartingScan}
+          >
             <Plus className="h-4 w-4" />
             Add target
           </Button>
@@ -219,7 +239,11 @@ export function ScansPage() {
           ) : !targets?.length ? (
             <div className="rounded-lg border border-dashed border-border/60 py-8 text-center">
               <p className="text-muted-foreground mb-4">No authorized targets yet.</p>
-              <Button variant="cyber" onClick={() => setTargetDialogOpen(true)}>
+              <Button
+                variant="cyber"
+                onClick={() => setTargetDialogOpen(true)}
+                disabled={isStartingScan}
+              >
                 <Plus className="h-4 w-4" />
                 Add your first target
               </Button>
@@ -355,7 +379,7 @@ export function ScansPage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setModalOpen(false)}
+              onClick={closeScanModal}
               aria-hidden
             />
             <motion.div
@@ -366,17 +390,28 @@ export function ScansPage() {
               role="dialog"
               aria-modal="true"
               aria-labelledby="create-scan-title"
+              aria-busy={isStartingScan}
             >
               <Card
-                className="w-full max-w-lg max-h-[90vh] overflow-y-auto"
+                className="relative w-full max-w-lg max-h-[90vh] overflow-y-auto overflow-x-hidden"
                 onClick={(e) => e.stopPropagation()}
               >
+                <LoadingOverlay
+                  show={isStartingScan}
+                  label="Running scan… this may take up to 30 seconds"
+                />
                 <CardHeader className="flex flex-row items-start justify-between">
                   <div>
                     <CardTitle id="create-scan-title">Create new scan</CardTitle>
                     <CardDescription>Configure scanners and confirm authorization</CardDescription>
                   </div>
-                  <Button variant="ghost" size="icon" onClick={() => setModalOpen(false)} aria-label="Close">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={closeScanModal}
+                    disabled={isStartingScan}
+                    aria-label="Close"
+                  >
                     <X className="h-4 w-4" />
                   </Button>
                 </CardHeader>
@@ -393,7 +428,8 @@ export function ScansPage() {
                       </label>
                       <select
                         id="target"
-                        className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 text-sm"
+                        className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 text-sm disabled:opacity-50"
+                        disabled={isStartingScan}
                         {...register("authorized_target_id")}
                       >
                         <option value="">Select target…</option>
@@ -411,7 +447,8 @@ export function ScansPage() {
                           No targets yet.{" "}
                           <button
                             type="button"
-                            className="text-cyan-400 hover:underline"
+                            className="text-cyan-400 hover:underline disabled:opacity-50"
+                            disabled={isStartingScan}
                             onClick={() => {
                               setModalOpen(false);
                               setTargetDialogOpen(true);
@@ -427,6 +464,7 @@ export function ScansPage() {
                         variant="ghost"
                         size="sm"
                         className="mt-2 h-8 text-cyan-400"
+                        disabled={isStartingScan}
                         onClick={() => {
                           setModalOpen(false);
                           setTargetDialogOpen(true);
@@ -442,7 +480,8 @@ export function ScansPage() {
                       </label>
                       <select
                         id="scan_type"
-                        className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 text-sm"
+                        className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 text-sm disabled:opacity-50"
+                        disabled={isStartingScan}
                         {...register("scan_type")}
                       >
                         {SCAN_TYPES.map((t) => (
@@ -459,8 +498,9 @@ export function ScansPage() {
                           <button
                             key={s.value}
                             type="button"
+                            disabled={isStartingScan}
                             onClick={() => toggleScanner(s.value)}
-                            className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                            className={`rounded-full border px-3 py-1 text-xs transition-colors disabled:opacity-50 disabled:pointer-events-none ${
                               selectedScanners.includes(s.value)
                                 ? "border-cyan-500/50 bg-cyan-500/15 text-cyan-300"
                                 : "border-border bg-transparent text-muted-foreground hover:border-border/80"
@@ -477,7 +517,8 @@ export function ScansPage() {
                     <label className="flex items-start gap-3 rounded-lg border border-border/50 p-4 cursor-pointer">
                       <input
                         type="checkbox"
-                        className="mt-1 h-4 w-4 rounded border-input"
+                        className="mt-1 h-4 w-4 rounded border-input disabled:opacity-50"
+                        disabled={isStartingScan}
                         {...register("consent_confirmed")}
                       />
                       <span className="text-sm">
@@ -489,14 +530,25 @@ export function ScansPage() {
                       <p className="text-xs text-destructive">{errors.consent_confirmed.message}</p>
                     )}
                     <div className="flex gap-3 pt-2">
-                      <Button type="button" variant="outline" className="flex-1" onClick={() => setModalOpen(false)}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="flex-1"
+                        onClick={closeScanModal}
+                        disabled={isStartingScan}
+                      >
                         Cancel
                       </Button>
-                      <Button type="submit" variant="cyber" className="flex-1" disabled={isSubmitting}>
-                        {isSubmitting ? (
+                      <Button
+                        type="submit"
+                        variant="cyber"
+                        className="flex-1"
+                        disabled={isStartingScan}
+                      >
+                        {isStartingScan ? (
                           <>
                             <Loader2 className="h-4 w-4 animate-spin" />
-                            Starting…
+                            Starting scan…
                           </>
                         ) : (
                           "Start scan"
@@ -517,7 +569,9 @@ export function ScansPage() {
         onCreated={(targetId) => {
           setValue("authorized_target_id", targetId);
           refetchTargets();
-          setModalOpen(true);
+          if (!isStartingScan) {
+            setModalOpen(true);
+          }
         }}
       />
     </div>
