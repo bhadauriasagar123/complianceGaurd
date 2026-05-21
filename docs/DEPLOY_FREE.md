@@ -11,7 +11,7 @@ Host the full app on **free tiers** — no credit card required for basic use.
 **Total cost: $0/month** for demo and light use.
 
 > **What you get on free tier:** Auth, dashboard, targets, scans (mock pipeline), findings UI, audit logs.  
-> **What you do not get for free:** Real Nmap/Nuclei/ZAP scans (need VPS/Docker), always-on API (Render sleeps), unlimited AI (Anthropic is paid).
+> **What you do not get for free:** Real Nmap/Nuclei/ZAP scans (need VPS/Docker), always-on API (Render sleeps). AI guides need an Anthropic or OpenAI API key (paid per use).
 
 ---
 
@@ -77,6 +77,11 @@ sh scripts/render_start.sh
 | `APP_URL` | `https://YOUR-APP.vercel.app` |
 | `API_URL` | `https://YOUR-SERVICE.onrender.com` |
 | `PROMETHEUS_ENABLED` | `false` |
+| `ANTHROPIC_API_KEY` | Optional — Claude for AI fix guides |
+| `OPENAI_API_KEY` | Optional — OpenAI if you prefer or as fallback |
+| `AI_PROVIDER` | `auto` (default), `anthropic`, or `openai` |
+
+Set **at least one** of `ANTHROPIC_API_KEY` or `OPENAI_API_KEY` to enable real AI resolution guides on Findings. With `AI_PROVIDER=auto`, Anthropic is tried first; if it fails or is unset, OpenAI is used. With neither key, the app uses built-in expert playbooks (no API cost).
 
 6. Deploy. Wait for **Live** status.
 7. Test: open `https://YOUR-SERVICE.onrender.com/health` → `{"status":"healthy",...}`.

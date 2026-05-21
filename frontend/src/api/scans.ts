@@ -2,6 +2,7 @@ import { apiClient } from "@/lib/api";
 import type {
   AuthorizedTarget,
   Finding,
+  FindingResolutionGuide,
   Scan,
   ScanListResponse,
   ScanType,
@@ -66,6 +67,16 @@ export const scansApi = {
     const { data } = await apiClient.get<Finding[]>(`/scans/${scanId}/findings`, {
       params: severity ? { severity } : undefined,
     });
+    return data;
+  },
+
+  getResolutionGuide: async (
+    scanId: string,
+    findingId: string
+  ): Promise<FindingResolutionGuide> => {
+    const { data } = await apiClient.post<FindingResolutionGuide>(
+      `/scans/${scanId}/findings/${findingId}/resolution-guide`
+    );
     return data;
   },
 };

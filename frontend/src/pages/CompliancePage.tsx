@@ -123,7 +123,10 @@ export function CompliancePage() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Compliance</h1>
-          <p className="text-muted-foreground">Framework scorecards and control coverage</p>
+          <p className="text-muted-foreground max-w-2xl">
+            Maps your scan findings to security frameworks (HIPAA, GDPR, PCI-DSS, OWASP Top 10)
+            and shows control coverage plus gaps to fix.
+          </p>
         </div>
         <div className="flex items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-2">
           <Shield className="h-5 w-5 text-emerald-400" aria-hidden />

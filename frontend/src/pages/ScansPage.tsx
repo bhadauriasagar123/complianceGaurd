@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Loader2, Ban, Crosshair } from "lucide-react";
+import { Plus, X, Loader2, Ban, Crosshair, CheckCircle2, ArrowRight } from "lucide-react";
 import { AddTargetDialog } from "@/components/targets/AddTargetDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -51,12 +52,22 @@ const SCANNERS: { value: ScannerType; label: string }[] = [
 ];
 
 export function ScansPage() {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { accessToken } = useAuthStore();
   const [modalOpen, setModalOpen] = useState(false);
   const [targetDialogOpen, setTargetDialogOpen] = useState(false);
   const [activeWsScanId, setActiveWsScanId] = useState<string | null>(null);
+  const [completedScanNotice, setCompletedScanNotice] = useState<{
+    id: string;
+    target: string;
+    score: number | null;
+  } | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const goToFindings = (scanId: string) => {
+    navigate(`/findings?scan=${scanId}`);
+  };
 
   const { data: scansData, isLoading } = useQuery({
     queryKey: ["scans"],
@@ -77,8 +88,16 @@ export function ScansPage() {
     scanId: activeWsScanId,
     token: accessToken,
     enabled: !!activeWsScanId && !!accessToken,
-    onComplete: () => {
+    onComplete: (data) => {
       queryClient.invalidateQueries({ queryKey: ["scans"] });
+      if (data.status === "completed") {
+        const scan = scansData?.items.find((s) => s.id === data.scan_id);
+        setCompletedScanNotice({
+          id: data.scan_id,
+          target: scan?.target_value ?? "Scan target",
+          score: data.compliance_score ?? scan?.compliance_score ?? null,
+        });
+      }
       setActiveWsScanId(null);
     },
   });
@@ -97,7 +116,16 @@ export function ScansPage() {
   });
 
   useEffect(() => {
-    if (polledScan && ["completed", "failed", "cancelled"].includes(polledScan.status)) {
+    if (!polledScan) return;
+    if (polledScan.status === "completed") {
+      setCompletedScanNotice({
+        id: polledScan.id,
+        target: polledScan.target_value,
+        score: polledScan.compliance_score,
+      });
+      queryClient.invalidateQueries({ queryKey: ["scans"] });
+      setActiveWsScanId(null);
+    } else if (["failed", "cancelled"].includes(polledScan.status)) {
       queryClient.invalidateQueries({ queryKey: ["scans"] });
       setActiveWsScanId(null);
     }
@@ -127,7 +155,14 @@ export function ScansPage() {
       queryClient.invalidateQueries({ queryKey: ["scans"] });
       setModalOpen(false);
       reset();
-      if (["completed", "failed", "cancelled"].includes(scan.status)) {
+      if (scan.status === "completed") {
+        setCompletedScanNotice({
+          id: scan.id,
+          target: scan.target_value,
+          score: scan.compliance_score,
+        });
+        setActiveWsScanId(null);
+      } else if (["failed", "cancelled"].includes(scan.status)) {
         setActiveWsScanId(null);
       } else {
         setActiveWsScanId(scan.id);
@@ -265,6 +300,34 @@ export function ScansPage() {
         </CardContent>
       </Card>
 
+      {completedScanNotice && (
+        <Card className="border-emerald-500/40 bg-emerald-500/10">
+          <CardContent className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-400" aria-hidden />
+              <div>
+                <p className="text-sm font-medium text-emerald-400">Scan completed</p>
+                <p className="font-mono text-xs text-muted-foreground">{completedScanNotice.target}</p>
+                {completedScanNotice.score != null && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Compliance score: {Math.round(completedScanNotice.score)}%
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="flex shrink-0 gap-2">
+              <Button variant="cyber" size="sm" onClick={() => goToFindings(completedScanNotice.id)}>
+                View findings
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setCompletedScanNotice(null)}>
+                Dismiss
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {activeWsScanId && (
         <Card className="border-cyan-500/30 bg-cyan-500/5">
           <CardContent className="p-4">
@@ -295,6 +358,12 @@ export function ScansPage() {
                   aria-valuemax={100}
                 />
               </div>
+              {liveProgress?.status === "completed" && liveProgress.scan_id && (
+                <Button variant="cyber" size="sm" onClick={() => goToFindings(liveProgress.scan_id)}>
+                  View findings
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -340,6 +409,17 @@ export function ScansPage() {
                       <td className="py-3 pr-4">{scan.progress_percent}%</td>
                       <td className="py-3 pr-4 text-muted-foreground">{formatDate(scan.created_at)}</td>
                       <td className="py-3">
+                        {scan.status === "completed" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => goToFindings(scan.id)}
+                            className="text-cyan-400"
+                          >
+                            Findings
+                            <ArrowRight className="h-3 w-3" />
+                          </Button>
+                        )}
                         {["running", "queued", "pending", "validating"].includes(scan.status) && (
                           <Button
                             variant="ghost"

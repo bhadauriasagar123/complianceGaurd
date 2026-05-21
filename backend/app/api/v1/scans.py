@@ -16,6 +16,7 @@ from app.models.target import AuthorizedTarget
 from app.schemas.scan import (
     AuthorizedTargetCreate,
     AuthorizedTargetResponse,
+    FindingResolutionGuideResponse,
     FindingResponse,
     ScanCreateRequest,
     ScanListResponse,
@@ -214,3 +215,61 @@ async def get_findings(
         query = query.where(Finding.severity == severity)
     result = await db.execute(query.order_by(Finding.severity))
     return [FindingResponse.model_validate(f) for f in result.scalars().all()]
+
+
+@router.post(
+    "/scans/{scan_id}/findings/{finding_id}/resolution-guide",
+    response_model=FindingResolutionGuideResponse,
+)
+async def get_finding_resolution_guide(
+    scan_id: UUID,
+    finding_id: UUID,
+    current_user: Annotated[CurrentUserContext, Depends(require_permission("finding:read"))],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> FindingResolutionGuideResponse:
+    from app.services.ai_service import AIService
+    from app.services.findings_engine import CanonicalFinding
+
+    result = await db.execute(
+        select(Finding).where(
+            Finding.id == finding_id,
+            Finding.scan_id == scan_id,
+            Finding.organization_id == current_user.organization_id,
+        )
+    )
+    finding = result.scalar_one_or_none()
+    if not finding:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Finding not found")
+
+    canonical = CanonicalFinding(
+        scanner=finding.scanner,
+        category=finding.category,
+        severity=finding.severity,
+        title=finding.title,
+        description=finding.description,
+        affected_asset=finding.affected_asset,
+        evidence=finding.evidence,
+        remediation=finding.remediation,
+        cwe_id=finding.cwe_id,
+        cve_id=finding.cve_id,
+        cvss_score=finding.cvss_score,
+    )
+
+    ai_service = AIService()
+    guide = await ai_service.generate_resolution_guide(canonical)
+
+    finding.ai_remediation = guide.get("summary") or finding.ai_remediation
+    finding.ai_confidence = guide.get("confidence", finding.ai_confidence)
+    await db.commit()
+
+    return FindingResolutionGuideResponse(
+        finding_id=finding.id,
+        summary=guide["summary"],
+        priority=guide["priority"],
+        estimated_effort=guide["estimated_effort"],
+        steps=guide["steps"],
+        compliance_notes=guide["compliance_notes"],
+        confidence=guide["confidence"],
+        powered_by_ai=guide.get("powered_by_ai", False),
+        ai_provider=guide.get("ai_provider"),
+    )

@@ -1,8 +1,10 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Search, Filter } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Search, Filter, Sparkles } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FindingResolutionDialog } from "@/components/findings/FindingResolutionDialog";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";import { Input } from "@/components/ui/input";
 import { Badge, severityBadgeVariant } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { scansApi } from "@/api/scans";
@@ -12,9 +14,18 @@ import type { Finding, Severity } from "@/types";
 const SEVERITIES: (Severity | "all")[] = ["all", "critical", "high", "medium", "low", "info"];
 
 export function FindingsPage() {
+  const [searchParams] = useSearchParams();
+  const scanFromUrl = searchParams.get("scan");
   const [selectedScanId, setSelectedScanId] = useState<string>("");
   const [severityFilter, setSeverityFilter] = useState<Severity | "all">("all");
   const [search, setSearch] = useState("");
+  const [guideFinding, setGuideFinding] = useState<Finding | null>(null);
+
+  useEffect(() => {
+    if (scanFromUrl) {
+      setSelectedScanId(scanFromUrl);
+    }
+  }, [scanFromUrl]);
 
   const { data: scansData, isLoading: scansLoading } = useQuery({
     queryKey: ["scans-for-findings"],
@@ -54,7 +65,10 @@ export function FindingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Findings</h1>
-        <p className="text-muted-foreground">Vulnerabilities and misconfigurations from scans</p>
+        <p className="text-muted-foreground">
+          Vulnerabilities from scans — use <strong className="text-purple-400 font-medium">Fix guide</strong> for
+          step-by-step AI remediation help.
+        </p>
       </div>
 
       <Card>
@@ -151,7 +165,8 @@ export function FindingsPage() {
                     <th className="pb-3 pr-4 font-medium">Scanner</th>
                     <th className="pb-3 pr-4 font-medium">Asset</th>
                     <th className="pb-3 pr-4 font-medium">CVSS</th>
-                    <th className="pb-3 font-medium">CVE</th>
+                    <th className="pb-3 pr-4 font-medium">CVE</th>
+                    <th className="pb-3 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -179,7 +194,19 @@ export function FindingsPage() {
                         {finding.affected_asset}
                       </td>
                       <td className="py-4 pr-4">{finding.cvss_score?.toFixed(1) ?? "—"}</td>
-                      <td className="py-4 font-mono text-xs">{finding.cve_id ?? "—"}</td>
+                      <td className="py-4 pr-4 font-mono text-xs">{finding.cve_id ?? "—"}</td>
+                      <td className="py-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-purple-300 border-purple-500/40 hover:bg-purple-500/10"
+                          onClick={() => setGuideFinding(finding)}
+                          disabled={!effectiveScanId}
+                        >
+                          <Sparkles className="h-3.5 w-3.5" />
+                          Fix guide
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -188,6 +215,13 @@ export function FindingsPage() {
           )}
         </CardContent>
       </Card>
+
+      <FindingResolutionDialog
+        finding={guideFinding}
+        scanId={effectiveScanId}
+        open={!!guideFinding}
+        onClose={() => setGuideFinding(null)}
+      />
     </div>
   );
 }

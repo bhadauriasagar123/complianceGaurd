@@ -39,7 +39,7 @@ async def _persist_findings(
     for finding in canonical:
         finding.compliance_mappings = compliance.map_finding(finding)
 
-    if not skip_ai and get_settings().anthropic_api_key:
+    if not skip_ai and get_settings().ai_configured:
         from app.services.ai_service import AIService
 
         ai_service = AIService()

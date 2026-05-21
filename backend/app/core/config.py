@@ -52,6 +52,9 @@ class Settings(BaseSettings):
 
     anthropic_api_key: str = ""
     anthropic_model: str = "claude-sonnet-4-20250514"
+    openai_api_key: str = ""
+    openai_model: str = "gpt-4o-mini"
+    ai_provider: Literal["auto", "anthropic", "openai"] = "auto"
     ai_max_tokens: int = 4096
     ai_temperature: float = 0.1
 
@@ -109,6 +112,24 @@ class Settings(BaseSettings):
                 if origin and origin not in origins:
                     origins.append(origin)
         return origins
+
+    @property
+    def ai_configured(self) -> bool:
+        """True when at least one configured AI provider has an API key."""
+        return bool(self.resolve_ai_provider_chain())
+
+    def resolve_ai_provider_chain(self) -> list[str]:
+        """Ordered provider names to try (anthropic, openai)."""
+        if self.ai_provider == "anthropic":
+            return ["anthropic"] if self.anthropic_api_key else []
+        if self.ai_provider == "openai":
+            return ["openai"] if self.openai_api_key else []
+        chain: list[str] = []
+        if self.anthropic_api_key:
+            chain.append("anthropic")
+        if self.openai_api_key:
+            chain.append("openai")
+        return chain
 
     @property
     def is_production(self) -> bool:

@@ -89,6 +89,25 @@ class FindingResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class ResolutionStepResponse(BaseModel):
+    order: int
+    title: str
+    description: str
+    verification: str
+
+
+class FindingResolutionGuideResponse(BaseModel):
+    finding_id: UUID
+    summary: str
+    priority: str
+    estimated_effort: str
+    steps: list[ResolutionStepResponse]
+    compliance_notes: str
+    confidence: float
+    powered_by_ai: bool
+    ai_provider: str | None = None
+
+
 class ScanListResponse(BaseModel):
     items: list[ScanResponse]
     total: int

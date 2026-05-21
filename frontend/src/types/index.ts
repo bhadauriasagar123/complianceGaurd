@@ -67,6 +67,25 @@ export interface Finding {
   created_at: string;
 }
 
+export interface FindingResolutionGuide {
+  finding_id: string;
+  summary: string;
+  priority: string;
+  estimated_effort: string;
+  steps: ResolutionStep[];
+  compliance_notes: string;
+  confidence: number;
+  powered_by_ai: boolean;
+  ai_provider?: string | null;
+}
+
+export interface ResolutionStep {
+  order: number;
+  title: string;
+  description: string;
+  verification: string;
+}
+
 export interface AuditLog {
   id: string;
   action: string;
