@@ -17,6 +17,8 @@ AI-powered infrastructure compliance and security assessment platform for enterp
 
 ## Architecture
 
+Full tech stack guide with flow diagrams: **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** (FastAPI, PostgreSQL, Redis, Docker, Celery, user flows, Windows Docker walkthrough).
+
 ```
 ┌─────────────┐     ┌─────────────┐     ┌──────────────────┐
 │   React UI  │────▶│   FastAPI   │────▶│ PostgreSQL / SQLite │

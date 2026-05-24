@@ -13,6 +13,8 @@ Host the full app on **free tiers** — no credit card required for basic use.
 > **What you get on free tier:** Auth, dashboard, targets, scans (mock pipeline), findings UI, audit logs.  
 > **What you do not get for free:** Real Nmap/Nuclei/ZAP scans (need VPS/Docker), always-on API (Render sleeps). AI guides need an Anthropic or OpenAI API key (paid per use).
 
+See also: [ARCHITECTURE.md](./ARCHITECTURE.md) for how React, FastAPI, Postgres, Redis, and Docker interact.
+
 ---
 
 ## Architecture (free)
